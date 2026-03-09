@@ -2,7 +2,7 @@
 
 A machine learning web application that predicts the risk of Type 2 Diabetes and Cardiovascular Disease based on patient health metrics. Built as a minor project using Python, Flask, and scikit-learn.
 
-**Live demo:** [health-risk-prediction.vercel.app](https://health-risk-prediction.vercel.app)
+**Live demo:** [health-risk-prediction.vercel.app](https://health-risk-prediction-px8y.vercel.app/)
 
 ---
 

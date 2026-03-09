@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Health Risk Assessment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="app-container">
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <h1>🏥 AI Health Risk Assessment</h1>
+        <p class="subtitle">ML-powered cardiovascular &amp; metabolic screening</p>
+    </header>
+
+    <!-- ===== MAIN FORM CARD ===== -->
+    <div class="card">
+        <form method="post" enctype="multipart/form-data" id="healthForm">
+
+            <!-- ── WIZARD PROGRESS BAR ── -->
+            <div class="wizard-progress">
+                <div class="wizard-step active" data-step="1">
+                    <span class="step-num">1</span>
+                    <span class="step-label">Basic Info</span>
+                </div>
+                <div class="wizard-line"></div>
+                <div class="wizard-step" data-step="2">
+                    <span class="step-num">2</span>
+                    <span class="step-label">Lab Values</span>
+                </div>
+                <div class="wizard-line"></div>
+                <div class="wizard-step" data-step="3">
+                    <span class="step-num">3</span>
+                    <span class="step-label">Cardiac <span class="optional-label">(optional)</span></span>
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- STEP 1 – Basic Info                     -->
+            <!-- ═══════════════════════════════════════ -->
+            <section class="wizard-panel active" id="panel-1">
+                <h2>👤 Basic Information</h2>
+                <p class="section-desc">Tell us the fundamentals — these drive the most significant risk factors.</p>
+
+                <!-- Upload -->
+                <h3 class="subsection-title">📄 Upload Medical Report <span class="optional-label">(optional — auto-fills fields)</span></h3>
+                <div class="file-upload-wrapper">
+                    <input type="file" name="report" id="reportFile" accept="image/*" class="file-input">
+                    <label for="reportFile" class="file-label">
+                        <span class="file-icon">📎</span>
+                        <span id="fileName">Choose image or drag here</span>
+                    </label>
+                    <div id="imagePreview" class="image-preview hidden">
+                        <img id="previewImg" src="" alt="Report preview">
+                        <button type="button" id="clearImage" class="clear-btn">✕ Remove</button>
+                    </div>
+                </div>
+
+                <!-- Age + Gender -->
+                <h3 class="subsection-title">📋 Personal Details</h3>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label for="age">Age <span class="required-star">*</span>
+                            <span class="relevance-tag">Strongest non-modifiable risk factor</span>
+                        </label>
+                        <input type="number" name="age" id="age" min="1" max="120"
+                               placeholder="e.g. 45"
+                               value="{{ metrics.age if metrics.age is not none else '' }}">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="sex">Biological Sex <span class="required-star">*</span>
+                            <span class="relevance-tag">Affects cardiovascular model inputs</span>
+                        </label>
+                        <select name="sex" id="sex">
+                            <option value="">Select…</option>
+                            <option value="1" {% if metrics.get('sex')==1 %}selected{% endif %}>Male</option>
+                            <option value="0" {% if metrics.get('sex')==0 %}selected{% endif %}>Female</option>
+                        </select>
+                    </div>
+
+                    <!-- Pregnancies — shown only for female -->
+                    <div class="input-group" id="pregnanciesGroup" style="display:none;">
+                        <label for="pregnancies">Number of Pregnancies
+                            <span class="optional-label">(optional)</span>
+                            <span class="relevance-tag">Diabetes dataset feature</span>
+                        </label>
+                        <input type="number" name="pregnancies" id="pregnancies" min="0" max="20"
+                               placeholder="e.g. 2"
+                               value="{{ metrics.get('pregnancies','') }}">
+                    </div>
+                </div>
+
+                <!-- Height + Weight → BMI auto-calc -->
+                <h3 class="subsection-title">⚖️ Height &amp; Weight <span class="optional-label">(we'll calculate BMI for you)</span></h3>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label for="height_cm">Height (cm)</label>
+                        <input type="number" name="height_cm" id="height_cm"
+                               min="50" max="250" placeholder="e.g. 170">
+                    </div>
+                    <div class="input-group">
+                        <label for="weight_kg">Weight (kg)</label>
+                        <input type="number" name="weight_kg" id="weight_kg"
+                               min="10" max="300" placeholder="e.g. 70">
+                    </div>
+                    <div class="input-group">
+                        <label for="bmi">BMI (kg/m²) <span class="required-star">*</span>
+                            <span class="relevance-tag">Auto-filled from height/weight</span>
+                        </label>
+                        <input type="number" step="0.1" name="bmi" id="bmi"
+                               min="10" max="60" placeholder="e.g. 24.2"
+                               value="{{ metrics.bmi if metrics.bmi is not none else '' }}">
+                        <small class="input-hint">Normal: 18.5 – 25 kg/m²</small>
+                        <div id="bmiStatus" class="inline-status"></div>
+                    </div>
+                </div>
+
+                <div class="wizard-nav">
+                    <div></div><!-- spacer -->
+                    <button type="button" class="btn-next" onclick="goStep(2)">
+                        Next: Lab Values →
+                    </button>
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- STEP 2 – Lab Values                     -->
+            <!-- ═══════════════════════════════════════ -->
+            <section class="wizard-panel" id="panel-2">
+                <h2>🧪 Lab Values</h2>
+                <p class="section-desc">These are usually available from a basic blood test / medical report.</p>
+
+                <div class="input-grid">
+                    <!-- Glucose -->
+                    <div class="input-group">
+                        <label for="glucose">Fasting Glucose (mg/dL) <span class="required-star">*</span>
+                            <span class="relevance-tag">Primary diabetes indicator</span>
+                        </label>
+                        <div class="slider-input-pair">
+                            <input type="range" id="glucoseSlider" min="50" max="400" step="1" value="95">
+                            <input type="number" name="glucose" id="glucose"
+                                   min="20" max="600" placeholder="95"
+                                   value="{{ metrics.glucose if metrics.glucose is not none else '' }}">
+                        </div>
+                        <small class="input-hint">Normal: 70 – 100 mg/dL</small>
+                        <div id="glucoseStatus" class="inline-status"></div>
+                    </div>
+
+                    <!-- Blood Pressure -->
+                    <div class="input-group">
+                        <label for="bp">Systolic Blood Pressure (mmHg) <span class="required-star">*</span>
+                            <span class="relevance-tag">Hypertension risk</span>
+                        </label>
+                        <div class="slider-input-pair">
+                            <input type="range" id="bpSlider" min="80" max="220" step="1" value="120">
+                            <input type="number" name="bp" id="bp"
+                                   min="50" max="250" placeholder="120"
+                                   value="{{ metrics.bp if metrics.bp is not none else '' }}">
+                        </div>
+                        <small class="input-hint">Normal: 90 – 120 mmHg (systolic only)</small>
+                        <div id="bpStatus" class="inline-status"></div>
+                    </div>
+
+                    <!-- Cholesterol -->
+                    <div class="input-group">
+                        <label for="chol">Total Cholesterol (mg/dL) <span class="required-star">*</span>
+                            <span class="relevance-tag">Atherosclerosis indicator</span>
+                        </label>
+                        <div class="slider-input-pair">
+                            <input type="range" id="cholSlider" min="100" max="400" step="1" value="180">
+                            <input type="number" name="chol" id="chol"
+                                   min="50" max="500" placeholder="180"
+                                   value="{{ metrics.chol if metrics.chol is not none else '' }}">
+                        </div>
+                        <small class="input-hint">Desirable: &lt;200 mg/dL</small>
+                        <div id="cholStatus" class="inline-status"></div>
+                    </div>
+                </div>
+
+                <div class="wizard-nav">
+                    <button type="button" class="btn-back" onclick="goStep(1)">← Back</button>
+                    <button type="button" class="btn-next" onclick="goStep(3)">
+                        Next: Cardiac Details →
+                    </button>
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════════════ -->
+            <!-- STEP 3 – Optional Cardiac              -->
+            <!-- ═══════════════════════════════════════ -->
+            <section class="wizard-panel" id="panel-3">
+                <h2>❤️ Cardiac Details <span class="optional-label">(all optional)</span></h2>
+                <p class="section-desc">
+                    Skip any fields you don't know — we'll use population averages.
+                    Providing these improves the cardiovascular prediction.
+                </p>
+
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label for="heart_rate">Resting Heart Rate (bpm)
+                            <span class="optional-label">(optional)</span>
+                            <span class="relevance-tag">Cardiovascular fitness</span>
+                        </label>
+                        <input type="number" name="heart_rate" id="heart_rate"
+                               min="30" max="220" placeholder="e.g. 72"
+                               value="{{ metrics.heart_rate if metrics.heart_rate is not none else '' }}">
+                        <small class="input-hint">Normal: 60 – 100 bpm</small>
+                        <div id="hrStatus" class="inline-status"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="max_heart_rate">Max Heart Rate (bpm)
+                            <span class="optional-label">(optional)</span>
+                            <span class="relevance-tag">From stress / exercise test</span>
+                        </label>
+                        <input type="number" name="max_heart_rate" id="max_heart_rate"
+                               min="50" max="250" placeholder="e.g. 150"
+                               value="{{ metrics.max_heart_rate if metrics.max_heart_rate is not none else '' }}">
+                        <small class="input-hint">Recorded during physical exertion</small>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="chest_pain">Chest Pain Type
+                            <span class="optional-label">(optional)</span>
+                            <span class="relevance-tag">Symptom-based screening</span>
+                        </label>
+                        <select name="chest_pain" id="chest_pain">
+                            <option value="">Not sure / None</option>
+                            <option value="3">No Chest Pain (Asymptomatic)</option>
+                            <option value="2">Non-anginal Pain</option>
+                            <option value="1">Atypical Angina</option>
+                            <option value="0">Typical Angina</option>
+                        </select>
+                        <small class="input-hint">Current or recent chest discomfort</small>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="exercise_angina">Chest Pain During Exercise?
+                            <span class="optional-label">(optional)</span>
+                            <span class="relevance-tag">Oxygen deprivation indicator</span>
+                        </label>
+                        <select name="exercise_angina" id="exercise_angina">
+                            <option value="">Not sure</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                        <small class="input-hint">Chest discomfort during physical activity</small>
+                    </div>
+                </div>
+
+                <div class="wizard-nav">
+                    <button type="button" class="btn-back" onclick="goStep(2)">← Back</button>
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <span class="btn-icon">🔍</span>
+                        Analyse Health Risk
+                    </button>
+                </div>
+            </section>
+
+        </form><!-- end form -->
+    </div><!-- end card -->
+
+    <!-- ===== LOADING OVERLAY ===== -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-box">
+            <div class="spinner"></div>
+            <p>Analysing your health data…</p>
+        </div>
+    </div>
+
+    <!-- ===== RESULTS SECTION ===== -->
+    <div id="resultsAnchor"></div>
+
+    {% if results or extracted %}
+
+    <!-- Patient Summary -->
+    {% if metrics %}
+    <div class="result-card summary-card">
+        <h2>📋 Your Profile Summary</h2>
+        <div class="summary-grid">
+            {% if metrics.age %}
+            <div class="summary-item"><span class="s-label">Age</span><span class="s-value">{{ metrics.age }} yrs</span></div>
+            {% endif %}
+            {% if metrics.bmi %}
+            <div class="summary-item"><span class="s-label">BMI</span><span class="s-value">{{ metrics.bmi }} kg/m²</span></div>
+            {% endif %}
+            {% if metrics.glucose %}
+            <div class="summary-item"><span class="s-label">Glucose</span><span class="s-value">{{ metrics.glucose }} mg/dL</span></div>
+            {% endif %}
+            {% if metrics.bp %}
+            <div class="summary-item"><span class="s-label">BP</span><span class="s-value">{{ metrics.bp }} mmHg</span></div>
+            {% endif %}
+            {% if metrics.chol %}
+            <div class="summary-item"><span class="s-label">Cholesterol</span><span class="s-value">{{ metrics.chol }} mg/dL</span></div>
+            {% endif %}
+            {% if metrics.heart_rate %}
+            <div class="summary-item"><span class="s-label">Heart Rate</span><span class="s-value">{{ metrics.heart_rate }} bpm</span></div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- OCR Extraction -->
+    {% if extracted and extracted|length > 0 %}
+    <div class="result-card extraction-card">
+        <h2>🔍 Extracted from Medical Report</h2>
+        <div class="extraction-grid">
+            {% for k, v in extracted.items() %}
+                {% if k != 'error' %}
+                <div class="extraction-item">
+                    <span class="extraction-label">{{ k | capitalize }}</span>
+                    <span class="extraction-value">{{ v }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% if extracted.error %}
+        <p class="error-message">⚠️ {{ extracted.error }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Input validation errors -->
+    {% if input_errors %}
+    <div class="result-card error-card">
+        <h2>⚠️ Input Validation Issues</h2>
+        {% for err in input_errors %}
+        <p class="error-message">{{ err }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Missing required fields -->
+    {% if missing %}
+    <div class="result-card warning-card">
+        <h2>⚠️ Missing Required Fields</h2>
+        <p>Please provide the following to generate a prediction:</p>
+        <div class="missing-items">
+            {% for m in missing %}
+            <span class="missing-badge">{{ m }}</span>
+            {% endfor %}
+        </div>
+        <p class="help-text">You can fill these manually or upload a medical report image to extract them automatically.</p>
+    </div>
+    {% endif %}
+
+    <!-- Health Assessments -->
+    {% if assessments %}
+    <div class="result-card assessment-card">
+        <h2>🩺 Health Metric Assessment</h2>
+        <p class="assessment-intro">Each metric rated against standard clinical reference ranges.</p>
+        <div class="assessment-grid">
+            {% for key, data in assessments.items() %}
+            <div class="assessment-item {% if data.status in ['Diabetic Range','Stage 2 Hypertension','High','Warning Sign'] %}critical{% endif %}">
+                <div class="assessment-header">
+                    <span class="metric-name">{{ key | replace('_',' ') | title }}</span>
+                    <span class="metric-value">{{ data.value }} {{ data.unit }}</span>
+                </div>
+                <div class="assessment-status status-{{ data.status | lower | replace(' ','-') }}">
+                    {{ data.status }}
+                </div>
+                {% if data.relevance %}
+                <div class="metric-relevance"><small>{{ data.relevance }}</small></div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Predictions -->
+    {% if results and not results.error %}
+    <div class="result-card prediction-card" id="predictionCard">
+        <h2>📊 Risk Predictions</h2>
+        <p class="prediction-intro">Based on your profile, our ML models estimate the following risk levels.</p>
+
+        <!-- Diabetes -->
+        <div class="risk-section">
+            <div class="risk-header">
+                <h3>🍬 Type 2 Diabetes Risk</h3>
+                <span class="risk-badge risk-{{ results.diabetes.risk.color }}">
+                    {{ results.diabetes.risk.icon }} {{ results.diabetes.risk.level }} Risk
+                </span>
+                {% if results.diabetes.risk.confidence == 'low' %}
+                <span class="confidence-tag">⚖️ Borderline — result uncertain</span>
+                {% endif %}
+            </div>
+            <div class="risk-bar-container">
+                <div class="risk-bar">
+                    <div class="risk-fill risk-fill-{{ results.diabetes.risk.color }}"
+                         style="width: {{ results.diabetes.probability }}%"></div>
+                </div>
+                <span class="risk-percentage">{{ results.diabetes.probability }}%</span>
+            </div>
+            <p class="risk-explanation">
+                {% if results.diabetes.probability < 20 %}
+                Your metabolic profile suggests low diabetes risk. Keep up healthy lifestyle habits.
+                {% elif results.diabetes.probability < 50 %}
+                Moderate risk detected. Lifestyle modifications can significantly reduce progression.
+                {% else %}
+                High risk identified. Immediate medical consultation is recommended.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Heart -->
+        <div class="risk-section">
+            <div class="risk-header">
+                <h3>❤️ Cardiovascular Disease Risk</h3>
+                <span class="risk-badge risk-{{ results.heart.risk.color }}">
+                    {{ results.heart.risk.icon }} {{ results.heart.risk.level }} Risk
+                </span>
+                {% if results.heart.risk.confidence == 'low' %}
+                <span class="confidence-tag">⚖️ Borderline — result uncertain</span>
+                {% endif %}
+            </div>
+            <div class="risk-bar-container">
+                <div class="risk-bar">
+                    <div class="risk-fill risk-fill-{{ results.heart.risk.color }}"
+                         style="width: {{ results.heart.probability }}%"></div>
+                </div>
+                <span class="risk-percentage">{{ results.heart.probability }}%</span>
+            </div>
+            <p class="risk-explanation">
+                {% if results.heart.probability < 20 %}
+                Your cardiovascular profile is within healthy parameters.
+                {% elif results.heart.probability < 50 %}
+                Moderate cardiovascular risk. Focus on BP, cholesterol, and heart rate.
+                {% else %}
+                Elevated cardiovascular risk. Urgent cardiology consultation recommended.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    {% if recommendations %}
+    <div class="result-card recommendations-card">
+        <h2>💡 Personalised Recommendations</h2>
+        <p class="recommendations-intro">Evidence-based interventions tailored to your risk profile.</p>
+        <div class="recommendations-grid">
+            {% for rec in recommendations %}
+            <div class="recommendation-item priority-{{ rec.priority | default('low') }}">
+                <span class="rec-icon">{{ rec.icon }}</span>
+                <div class="rec-content">
+                    <div class="rec-header">
+                        <strong class="rec-category">{{ rec.category }}</strong>
+                        {% if rec.priority == 'urgent' %}
+                        <span class="priority-badge urgent">URGENT</span>
+                        {% elif rec.priority == 'high' %}
+                        <span class="priority-badge high">HIGH PRIORITY</span>
+                        {% endif %}
+                    </div>
+                    <p class="rec-text">{{ rec.text }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Reset button -->
+    <div class="reset-section">
+        <a href="/" class="reset-btn">🔄 Start a New Assessment</a>
+    </div>
+
+    {% endif %}
+
+    <!-- Error display -->
+    {% if results.error %}
+    <div class="result-card error-card">
+        <h2>❌ Processing Error</h2>
+        <p class="error-message">{{ results.error }}</p>
+        <p class="help-text">Please check your inputs and try again.</p>
+    </div>
+    {% endif %}
+
+    {% endif %}<!-- end if results or extracted -->
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="disclaimer">
+            <strong>⚠️ Medical Disclaimer:</strong> This system is for educational and informational purposes only.
+            Predictions are based on ML models trained on clinical datasets and should
+            <strong>NOT</strong> replace professional medical diagnosis or treatment.
+            Always consult a qualified healthcare professional.
+            If you experience chest pain, shortness of breath, or other urgent symptoms,
+            seek emergency care immediately.
+        </div>
+    </footer>
+
+</div><!-- end app-container -->
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+// ── Wizard navigation ──────────────────────────────────────────
+let currentStep = 1;
+
+function goStep(step) {
+    document.getElementById(`panel-${currentStep}`).classList.remove('active');
+    document.querySelector(`.wizard-step[data-step="${currentStep}"]`).classList.remove('active');
+    document.querySelector(`.wizard-step[data-step="${currentStep}"]`).classList.add('done');
+
+    currentStep = step;
+    document.getElementById(`panel-${step}`).classList.add('active');
+    document.querySelector(`.wizard-step[data-step="${step}"]`).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Pregnancies field visibility ────────────────────────────────
+document.getElementById('sex').addEventListener('change', function () {
+    const pg = document.getElementById('pregnanciesGroup');
+    pg.style.display = (this.value === '0') ? 'flex' : 'none';
+});
+
+// ── BMI auto-calculator ─────────────────────────────────────────
+function recalcBMI() {
+    const h = parseFloat(document.getElementById('height_cm').value);
+    const w = parseFloat(document.getElementById('weight_kg').value);
+    const bmiInput = document.getElementById('bmi');
+    if (h > 0 && w > 0) {
+        const bmi = (w / ((h / 100) ** 2)).toFixed(1);
+        bmiInput.value = bmi;
+        updateStatus('bmi', parseFloat(bmi));
+    }
+}
+document.getElementById('height_cm').addEventListener('input', recalcBMI);
+document.getElementById('weight_kg').addEventListener('input', recalcBMI);
+
+// ── Slider ↔ number input sync ──────────────────────────────────
+const sliderPairs = [
+    { slider: 'glucoseSlider', input: 'glucose',  statusId: 'glucoseStatus' },
+    { slider: 'bpSlider',      input: 'bp',       statusId: 'bpStatus'      },
+    { slider: 'cholSlider',    input: 'chol',     statusId: 'cholStatus'    },
+];
+
+sliderPairs.forEach(({ slider, input, statusId }) => {
+    const sl = document.getElementById(slider);
+    const inp = document.getElementById(input);
+    if (!sl || !inp) return;
+
+    // Init slider from existing value (after POST)
+    if (inp.value) sl.value = inp.value;
+
+    sl.addEventListener('input', () => {
+        inp.value = sl.value;
+        updateStatus(input, parseFloat(sl.value));
+        colorSlider(sl);
+    });
+    inp.addEventListener('input', () => {
+        if (inp.value) { sl.value = inp.value; colorSlider(sl); }
+        updateStatus(input, parseFloat(inp.value));
+    });
+    colorSlider(sl);
+});
+
+function colorSlider(sl) {
+    const pct = ((sl.value - sl.min) / (sl.max - sl.min)) * 100;
+    sl.style.background =
+        `linear-gradient(to right, #667eea 0%, #667eea ${pct}%, #e2e8f0 ${pct}%, #e2e8f0 100%)`;
+}
+
+// ── Inline status labels ─────────────────────────────────────────
+const statusConfig = {
+    glucose: [
+        { max: 100, label: '✓ Normal',         cls: 'ok'   },
+        { max: 126, label: '⚠ Pre-diabetic',   cls: 'warn' },
+        { max: Infinity, label: '✗ High Risk',  cls: 'bad'  },
+    ],
+    bp: [
+        { max: 120, label: '✓ Normal',              cls: 'ok'   },
+        { max: 130, label: '⚠ Elevated',            cls: 'warn' },
+        { max: 140, label: '⚠ Stage 1 Hypertension',cls: 'warn' },
+        { max: Infinity, label: '✗ Stage 2 Hypertension', cls: 'bad' },
+    ],
+    chol: [
+        { max: 200, label: '✓ Desirable',     cls: 'ok'   },
+        { max: 240, label: '⚠ Borderline',    cls: 'warn' },
+        { max: Infinity, label: '✗ High',     cls: 'bad'  },
+    ],
+    bmi: [
+        { max: 18.5, label: '⚠ Underweight', cls: 'warn' },
+        { max: 25,   label: '✓ Normal',       cls: 'ok'   },
+        { max: 30,   label: '⚠ Overweight',  cls: 'warn' },
+        { max: Infinity, label: '✗ Obese',   cls: 'bad'  },
+    ],
+    heart_rate: [
+        { max: 60,  label: '⚡ Athletic',     cls: 'ok'   },
+        { max: 100, label: '✓ Normal',        cls: 'ok'   },
+        { max: Infinity, label: '⚠ Elevated', cls: 'warn' },
+    ],
+};
+
+function updateStatus(field, value) {
+    const statuses = statusConfig[field];
+    const el = document.getElementById(field + 'Status') ||
+               document.getElementById('hrStatus');  // heart_rate edge case
+    if (!statuses || !el || isNaN(value)) { if(el) el.textContent = ''; return; }
+
+    for (const s of statuses) {
+        if (value < s.max) {
+            el.textContent = s.label;
+            el.className = `inline-status status-inline-${s.cls}`;
+            return;
+        }
+    }
+}
+
+// Attach blur-based status to heart rate field
+const hrInput = document.getElementById('heart_rate');
+if (hrInput) {
+    hrInput.addEventListener('input', () =>
+        updateStatus('heart_rate', parseFloat(hrInput.value))
+    );
+}
+const bmiInput = document.getElementById('bmi');
+if (bmiInput) {
+    bmiInput.addEventListener('input', () =>
+        updateStatus('bmi', parseFloat(bmiInput.value))
+    );
+}
+
+// ── File upload preview ─────────────────────────────────────────
+const fileInput = document.getElementById('reportFile');
+const fileName  = document.getElementById('fileName');
+const preview   = document.getElementById('imagePreview');
+const previewImg = document.getElementById('previewImg');
+
+fileInput.addEventListener('change', function () {
+    if (this.files && this.files[0]) {
+        fileName.textContent = this.files[0].name;
+        const reader = new FileReader();
+        reader.onload = e => {
+            previewImg.src = e.target.result;
+            preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+
+document.getElementById('clearImage').addEventListener('click', function () {
+    fileInput.value = '';
+    fileName.textContent = 'Choose image or drag here';
+    previewImg.src = '';
+    preview.classList.add('hidden');
+});
+
+// ── Loading spinner on submit ────────────────────────────────────
+document.getElementById('healthForm').addEventListener('submit', function (e) {
+    const required = ['age', 'sex', 'glucose', 'bp', 'chol'];
+    const missingFields = required.filter(id => !document.getElementById(id)?.value);
+
+    if (missingFields.length > 0) {
+        e.preventDefault();
+        alert(`Please fill in: ${missingFields.join(', ').toUpperCase()}`);
+        return;
+    }
+
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+});
+
+// ── Auto-scroll to results on load ──────────────────────────────
+window.addEventListener('load', function () {
+    const anchor = document.getElementById('resultsAnchor');
+    const hasResults = document.getElementById('predictionCard') ||
+                       document.querySelector('.warning-card') ||
+                       document.querySelector('.error-card');
+    if (anchor && hasResults) {
+        setTimeout(() => anchor.scrollIntoView({ behavior: 'smooth' }), 300);
+    }
+});
+
+// ── Restore slider positions on page reload after POST ──────────
+window.addEventListener('DOMContentLoaded', function () {
+    sliderPairs.forEach(({ slider, input }) => {
+        const inp = document.getElementById(input);
+        const sl  = document.getElementById(slider);
+        if (inp && sl && inp.value) {
+            sl.value = inp.value;
+            colorSlider(sl);
+        }
+    });
+
+    // Trigger status labels for pre-filled values
+    ['glucose', 'bp', 'chol', 'bmi'].forEach(field => {
+        const el = document.getElementById(field);
+        if (el && el.value) updateStatus(field, parseFloat(el.value));
+    });
+});
+</script>
+
+</body>
+</html>

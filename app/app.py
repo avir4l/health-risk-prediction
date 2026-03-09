@@ -27,10 +27,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ========== TESSERACT PATH (update for your OS) ==========
-import shutil
-tesseract_path = shutil.which("tesseract")
-if tesseract_path:
-    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+# Replace the pytesseract import block with this:
+try:
+    import pytesseract
+    from PIL import Image
+    OCR_AVAILABLE = True
+except Exception:
+    OCR_AVAILABLE = False
 # ========== FLASK APP ==========
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
@@ -64,6 +67,8 @@ HEART_FEATURE_MEANS = {
 
 # ========== OCR EXTRACTION ==========
 def extract_from_report(image):
+    if not OCR_AVAILABLE:
+        return {}
     """
     Extract health metrics from a medical report image using OCR.
     Multiple regex patterns are tried per field to handle varied report formats.

@@ -4,8 +4,4 @@ scikit-learn
 joblib
 pillow
 pytesseract
-xgboost
-optuna
-imbalanced-learn
-matplotlib
-seaborn
+xgboost

@@ -1,6 +1,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from flask import Flask, render_template, request
+import pandas as pd
 import numpy as np
 import joblib
 from pathlib import Path
@@ -45,12 +46,16 @@ if not (BASE_DIR / 'model').exists():
 
 # ========== LOAD MODELS ==========
 try:
-    diabetes_model  = joblib.load(BASE_DIR / "model" / "diabetes_model.pkl")
-    diabetes_scaler = joblib.load(BASE_DIR / "model" / "diabetes_scaler.pkl")
-    heart_model     = joblib.load(BASE_DIR / "model" / "heart_model.pkl")
-    logger.info("✓ All models loaded successfully")
+    diabetes_model   = joblib.load(BASE_DIR / "model" / "diabetes_stacking_model.pkl")
+    diabetes_scaler  = joblib.load(BASE_DIR / "model" / "diabetes_advanced_scaler.pkl")
+    diabetes_features = joblib.load(BASE_DIR / "model" / "diabetes_feature_names.pkl")
+    
+    heart_model      = joblib.load(BASE_DIR / "model" / "heart_stacking_model.pkl")
+    heart_scaler     = joblib.load(BASE_DIR / "model" / "heart_advanced_scaler.pkl")
+    heart_features   = joblib.load(BASE_DIR / "model" / "heart_feature_names.pkl")
+    logger.info("✓ All advanced models loaded successfully")
 except Exception as e:
-    logger.error(f"✗ Model loading failed: {e}")
+    logger.error(f"✗ Model loading failed: {e}. Are advanced models trained?")
     raise
 
 # ========== DATASET MEANS FOR MISSING HEART FEATURES ==========
@@ -252,43 +257,104 @@ def index():
             if not missing and not input_errors:
 
                 # --- Diabetes ---
-                d_input = np.array([[
-                    pregnancies,
-                    glucose   if glucose   else 0,
-                    bp        if bp        else 0,
-                    0,          # skin thickness — use 0 (mean imputed in training)
-                    0,          # insulin — use 0 (mean imputed in training)
-                    bmi       if bmi       else 0,
-                    0.5,        # diabetes pedigree function — population default
-                    age       if age       else 0,
-                ]])
+                pregnancies_val = pregnancies if pregnancies is not None else 0
+                glucose_val = glucose if glucose is not None else 120.9
+                bp_val = bp if bp is not None else 69.1
+                bmi_val = bmi if bmi is not None else 31.99
+                age_val = age if age is not None else 33.2
+                
+                d_dict = {
+                    'pregnancies': [pregnancies_val],
+                    'glucose': [glucose_val],
+                    'bloodpressure': [bp_val],
+                    'skinthickness': [0],
+                    'insulin': [0],
+                    'bmi': [bmi_val],
+                    'diabetespedigreefunction': [0.5],
+                    'age': [age_val]
+                }
+                d_df = pd.DataFrame(d_dict)
+                
+                # Apply same feature engineering as advanced_preprocessing
+                d_df['glucose_bmi_interaction'] = d_df['glucose'] * d_df['bmi']
+                d_df['age_glucose_risk'] = d_df['age'] * d_df['glucose'] / 1000
+                d_df['bmi_bp_interaction'] = d_df['bmi'] * d_df['bloodpressure']
+                d_df['insulin_resistance_proxy'] = d_df['glucose'] / (d_df['insulin'] + 1)
+                d_df['glucose_age_ratio'] = d_df['glucose'] / (d_df['age'] + 1)
+                d_df['metabolic_syndrome_score'] = (
+                    (d_df['glucose'] > 100).astype(int) +
+                    (d_df['bmi'] > 25).astype(int) +
+                    (d_df['bloodpressure'] > 130).astype(int) +
+                    (d_df['insulin'] > 166).astype(int)
+                )
+                d_df['age_group'] = pd.cut(d_df['age'], bins=[0, 30, 45, 60, 100], labels=[0, 1, 2, 3]).astype(int)
+                d_df['bmi_category'] = pd.cut(d_df['bmi'], bins=[0, 18.5, 25, 30, 100], labels=[0, 1, 2, 3]).astype(int)
+                d_df['glucose_category'] = pd.cut(d_df['glucose'], bins=[0, 100, 126, 600], labels=[0, 1, 2]).astype(int)
+                d_df['glucose_squared'] = d_df['glucose'] ** 2
+                d_df['bmi_squared'] = d_df['bmi'] ** 2
+                
+                d_input = d_df[diabetes_features]
                 d_scaled = diabetes_scaler.transform(d_input)
                 d_prob   = diabetes_model.predict_proba(d_scaled)[0][1]
                 d_risk   = d_prob * 100
 
                 # --- Heart disease ---
-                # Sex: model was trained on 0=female, 1=male
-                sex_val = sex if sex is not None else 1   # default male (conservative)
-
-                # Fasting blood sugar proxy: glucose > 120 → 1
+                sex_val = sex if sex is not None else 1 
+                h_age = age if age is not None else 54.4
+                cp_val = chest_pain if chest_pain is not None else 3
+                h_bp = bp if bp is not None else 131.6
+                h_chol = chol if chol is not None else 246.6
                 fasting_bs = 1 if (glucose and glucose > 120) else 0
+                h_thalach = max_heart_rate if max_heart_rate else 149.6
+                exang_val = exercise_angina if exercise_angina is not None else 0
 
-                h_input = np.array([[
-                    age     if age   else 0,
-                    sex_val,
-                    chest_pain     if chest_pain     is not None else 3,   # 3 = asymptomatic
-                    bp      if bp    else 0,
-                    chol    if chol  else 0,
-                    fasting_bs,
-                    HEART_FEATURE_MEANS["rest_ecg"],
-                    max_heart_rate if max_heart_rate else 150,             # population mean ≈ 150
-                    exercise_angina if exercise_angina is not None else 0,
-                    HEART_FEATURE_MEANS["oldpeak"],
-                    HEART_FEATURE_MEANS["slope"],
-                    HEART_FEATURE_MEANS["ca"],
-                    HEART_FEATURE_MEANS["thal"],
-                ]])
-                h_prob = heart_model.predict_proba(h_input)[0][1]
+                h_dict = {
+                    'age': [h_age],
+                    'sex': [sex_val],
+                    'cp': [cp_val],
+                    'trestbps': [h_bp],
+                    'chol': [h_chol],
+                    'fbs': [fasting_bs],
+                    'restecg': [HEART_FEATURE_MEANS["rest_ecg"]],
+                    'thalach': [h_thalach],
+                    'exang': [exang_val],
+                    'oldpeak': [HEART_FEATURE_MEANS["oldpeak"]],
+                    'slope': [HEART_FEATURE_MEANS["slope"]],
+                    'ca': [HEART_FEATURE_MEANS["ca"]],
+                    'thal': [HEART_FEATURE_MEANS["thal"]]
+                }
+                h_df = pd.DataFrame(h_dict)
+                
+                # Apply same feature engineering
+                h_df['age_bp_risk'] = h_df['age'] * h_df['trestbps'] / 1000
+                h_df['heart_rate_reserve'] = (220 - h_df['age']) - h_df['thalach']
+                h_df['st_severity'] = h_df['oldpeak'] * h_df['slope']
+                h_df['age_chol_interaction'] = h_df['age'] * h_df['chol'] / 1000
+                h_df['chol_age_ratio'] = h_df['chol'] / (h_df['age'] + 1)
+                h_df['hr_percent_max'] = h_df['thalach'] / (220 - h_df['age'] + 1) * 100
+                h_df['cardiac_risk_score'] = (
+                    (h_df['age'] > 55).astype(int) +
+                    (h_df['trestbps'] > 130).astype(int) +
+                    (h_df['chol'] > 240).astype(int) +
+                    (h_df['fbs'] == 1).astype(int) +
+                    (h_df['thalach'] < 120).astype(int) +
+                    (h_df['exang'] == 1).astype(int) +
+                    (h_df['oldpeak'] > 1.5).astype(int) +
+                    (h_df['ca'] > 0).astype(int)
+                )
+                h_df['symptom_severity'] = (
+                    (h_df['cp'].isin([1, 2])).astype(int) * 2 +
+                    (h_df['exang'] == 1).astype(int) * 2 +
+                    (h_df['oldpeak'] > 2).astype(int)
+                )
+                h_df['age_group'] = pd.cut(h_df['age'], bins=[0, 40, 55, 65, 100], labels=[0, 1, 2, 3]).astype(int)
+                h_df['bp_category'] = pd.cut(h_df['trestbps'], bins=[0, 120, 130, 140, 300], labels=[0, 1, 2, 3]).astype(int)
+                h_df['oldpeak_squared'] = h_df['oldpeak'] ** 2
+                h_df['age_squared'] = h_df['age'] ** 2
+
+                h_input = h_df[heart_features]
+                h_scaled = heart_scaler.transform(h_input)
+                h_prob = heart_model.predict_proba(h_scaled)[0][1]
                 h_risk = h_prob * 100
 
                 results = {

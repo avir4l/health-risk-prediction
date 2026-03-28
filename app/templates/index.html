@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Health Risk Assessment</title>
+    <title>Health & Wellbeing Assessment</title>
+    <!-- Modern, readable fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -11,8 +15,14 @@
 
     <!-- ===== HEADER ===== -->
     <header class="header">
-        <h1>🏥 AI Health Risk Assessment</h1>
-        <p class="subtitle">ML-powered cardiovascular &amp; metabolic screening</p>
+        <div class="header-icon-wrapper">
+            <!-- Heart / Health Icon -->
+            <svg class="header-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+        </div>
+        <h1>Health Assessment</h1>
+        <p class="subtitle">A clear, supportive tool to understand your heart and metabolic wellbeing.</p>
     </header>
 
     <!-- ===== MAIN FORM CARD ===== -->
@@ -20,7 +30,7 @@
         <form method="post" enctype="multipart/form-data" id="healthForm">
 
             <!-- ── WIZARD PROGRESS BAR ── -->
-            <div class="wizard-progress">
+            <div class="wizard-progress" role="progressbar" aria-label="Assessment progress">
                 <div class="wizard-step active" data-step="1">
                     <span class="step-num">1</span>
                     <span class="step-label">Basic Info</span>
@@ -33,7 +43,7 @@
                 <div class="wizard-line"></div>
                 <div class="wizard-step" data-step="3">
                     <span class="step-num">3</span>
-                    <span class="step-label">Cardiac <span class="optional-label">(optional)</span></span>
+                    <span class="step-label">Cardiac Stats <span class="optional-label">(optional)</span></span>
                 </div>
             </div>
 
@@ -41,41 +51,45 @@
             <!-- STEP 1 – Basic Info                     -->
             <!-- ═══════════════════════════════════════ -->
             <section class="wizard-panel active" id="panel-1">
-                <h2>👤 Basic Information</h2>
-                <p class="section-desc">Tell us the fundamentals — these drive the most significant risk factors.</p>
+                <h2>
+                    <svg viewBox="0 0 24 24" class="icon" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Your Information
+                </h2>
+                <p class="section-desc">We'll start with fundamental details to tailor our insights specifically for you.</p>
 
                 <!-- Upload -->
-                <h3 class="subsection-title">📄 Upload Medical Report <span class="optional-label">(optional — auto-fills fields)</span></h3>
-                <div class="file-upload-wrapper">
-                    <input type="file" name="report" id="reportFile" accept="image/*" class="file-input">
-                    <label for="reportFile" class="file-label">
-                        <span class="file-icon">📎</span>
-                        <span id="fileName">Choose image or drag here</span>
-                    </label>
-                    <div id="imagePreview" class="image-preview hidden">
-                        <img id="previewImg" src="" alt="Report preview">
-                        <button type="button" id="clearImage" class="clear-btn">✕ Remove</button>
+                <div class="upload-section">
+                    <h3 class="subsection-title">Have a recent medical report? <span class="optional-label">(optional)</span></h3>
+                    <p class="subsection-hint">Upload a picture of your lab report and we'll automatically fill in the values.</p>
+                    <div class="file-upload-wrapper">
+                        <input type="file" name="report" id="reportFile" accept="image/*" class="file-input">
+                        <label for="reportFile" class="file-label">
+                            <span class="file-icon">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                            </span>
+                            <span id="fileName">Tap here to choose an image</span>
+                        </label>
+                        <div id="imagePreview" class="image-preview hidden">
+                            <img id="previewImg" src="" alt="Report preview">
+                            <button type="button" id="clearImage" class="clear-btn">Remove Image</button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Age + Gender -->
-                <h3 class="subsection-title">📋 Personal Details</h3>
+                <h3 class="subsection-title">Personal Details</h3>
                 <div class="input-grid">
                     <div class="input-group">
-                        <label for="age">Age <span class="required-star">*</span>
-                            <span class="relevance-tag">Strongest non-modifiable risk factor</span>
-                        </label>
+                        <label for="age">How old are you? <span class="required-star">*</span></label>
                         <input type="number" name="age" id="age" min="1" max="120"
-                               placeholder="e.g. 45"
+                               placeholder="e.g. 58"
                                value="{{ metrics.age if metrics.age is not none else '' }}">
                     </div>
 
                     <div class="input-group">
-                        <label for="sex">Biological Sex <span class="required-star">*</span>
-                            <span class="relevance-tag">Affects cardiovascular model inputs</span>
-                        </label>
+                        <label for="sex">Biological Sex <span class="required-star">*</span></label>
                         <select name="sex" id="sex">
-                            <option value="">Select…</option>
+                            <option value="">Please select...</option>
                             <option value="1" {% if metrics.get('sex')==1 %}selected{% endif %}>Male</option>
                             <option value="0" {% if metrics.get('sex')==0 %}selected{% endif %}>Female</option>
                         </select>
@@ -83,10 +97,7 @@
 
                     <!-- Pregnancies — shown only for female -->
                     <div class="input-group" id="pregnanciesGroup" style="display:none;">
-                        <label for="pregnancies">Number of Pregnancies
-                            <span class="optional-label">(optional)</span>
-                            <span class="relevance-tag">Diabetes dataset feature</span>
-                        </label>
+                        <label for="pregnancies">Number of pregnancies <span class="optional-label">(optional)</span></label>
                         <input type="number" name="pregnancies" id="pregnancies" min="0" max="20"
                                placeholder="e.g. 2"
                                value="{{ metrics.get('pregnancies','') }}">
@@ -94,7 +105,7 @@
                 </div>
 
                 <!-- Height + Weight → BMI auto-calc -->
-                <h3 class="subsection-title">⚖️ Height &amp; Weight <span class="optional-label">(we'll calculate BMI for you)</span></h3>
+                <h3 class="subsection-title">Height & Weight</h3>
                 <div class="input-grid">
                     <div class="input-group">
                         <label for="height_cm">Height (cm)</label>
@@ -104,24 +115,22 @@
                     <div class="input-group">
                         <label for="weight_kg">Weight (kg)</label>
                         <input type="number" name="weight_kg" id="weight_kg"
-                               min="10" max="300" placeholder="e.g. 70">
+                               min="10" max="300" placeholder="e.g. 75">
                     </div>
-                    <div class="input-group">
-                        <label for="bmi">BMI (kg/m²) <span class="required-star">*</span>
-                            <span class="relevance-tag">Auto-filled from height/weight</span>
-                        </label>
+                    <div class="input-group highlight-group">
+                        <label for="bmi">BMI (Body Mass Index) <span class="required-star">*</span></label>
                         <input type="number" step="0.1" name="bmi" id="bmi"
                                min="10" max="60" placeholder="e.g. 24.2"
                                value="{{ metrics.bmi if metrics.bmi is not none else '' }}">
-                        <small class="input-hint">Normal: 18.5 – 25 kg/m²</small>
                         <div id="bmiStatus" class="inline-status"></div>
                     </div>
                 </div>
 
                 <div class="wizard-nav">
                     <div></div><!-- spacer -->
-                    <button type="button" class="btn-next" onclick="goStep(2)">
-                        Next: Lab Values →
+                    <button type="button" class="btn-primary" onclick="goStep(2)">
+                        Continue to Lab Values
+                        <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                     </button>
                 </div>
             </section>
@@ -130,60 +139,67 @@
             <!-- STEP 2 – Lab Values                     -->
             <!-- ═══════════════════════════════════════ -->
             <section class="wizard-panel" id="panel-2">
-                <h2>🧪 Lab Values</h2>
-                <p class="section-desc">These are usually available from a basic blood test / medical report.</p>
+                <h2>
+                    <svg viewBox="0 0 24 24" class="icon" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                    Lab Values
+                </h2>
+                <p class="section-desc">These routine measurements help us evaluate your cardiovascular and metabolic health.</p>
 
                 <div class="input-grid">
                     <!-- Glucose -->
                     <div class="input-group">
-                        <label for="glucose">Fasting Glucose (mg/dL) <span class="required-star">*</span>
-                            <span class="relevance-tag">Primary diabetes indicator</span>
+                        <label for="glucose" class="patient-friendly-label">
+                            <span class="label-title">Fasting Blood Sugar (Glucose) <span class="required-star">*</span></span>
+                            <span class="label-desc">Typically measured first thing in the morning (mg/dL)</span>
                         </label>
                         <div class="slider-input-pair">
-                            <input type="range" id="glucoseSlider" min="50" max="400" step="1" value="95">
-                            <input type="number" name="glucose" id="glucose"
+                            <input type="range" id="glucoseSlider" class="range-slider" min="50" max="400" step="1" value="95">
+                            <input type="number" name="glucose" id="glucose" class="large-input"
                                    min="20" max="600" placeholder="95"
                                    value="{{ metrics.glucose if metrics.glucose is not none else '' }}">
                         </div>
-                        <small class="input-hint">Normal: 70 – 100 mg/dL</small>
                         <div id="glucoseStatus" class="inline-status"></div>
                     </div>
 
                     <!-- Blood Pressure -->
                     <div class="input-group">
-                        <label for="bp">Systolic Blood Pressure (mmHg) <span class="required-star">*</span>
-                            <span class="relevance-tag">Hypertension risk</span>
+                        <label for="bp" class="patient-friendly-label">
+                            <span class="label-title">Systolic Blood Pressure <span class="required-star">*</span></span>
+                            <span class="label-desc">The top number in your reading (mmHg)</span>
                         </label>
                         <div class="slider-input-pair">
-                            <input type="range" id="bpSlider" min="80" max="220" step="1" value="120">
-                            <input type="number" name="bp" id="bp"
+                            <input type="range" id="bpSlider" class="range-slider" min="80" max="220" step="1" value="120">
+                            <input type="number" name="bp" id="bp" class="large-input"
                                    min="50" max="250" placeholder="120"
                                    value="{{ metrics.bp if metrics.bp is not none else '' }}">
                         </div>
-                        <small class="input-hint">Normal: 90 – 120 mmHg (systolic only)</small>
                         <div id="bpStatus" class="inline-status"></div>
                     </div>
 
                     <!-- Cholesterol -->
                     <div class="input-group">
-                        <label for="chol">Total Cholesterol (mg/dL) <span class="required-star">*</span>
-                            <span class="relevance-tag">Atherosclerosis indicator</span>
+                        <label for="chol" class="patient-friendly-label">
+                            <span class="label-title">Total Cholesterol <span class="required-star">*</span></span>
+                            <span class="label-desc">Found in your lipid panel (mg/dL)</span>
                         </label>
                         <div class="slider-input-pair">
-                            <input type="range" id="cholSlider" min="100" max="400" step="1" value="180">
-                            <input type="number" name="chol" id="chol"
+                            <input type="range" id="cholSlider" class="range-slider" min="100" max="400" step="1" value="180">
+                            <input type="number" name="chol" id="chol" class="large-input"
                                    min="50" max="500" placeholder="180"
                                    value="{{ metrics.chol if metrics.chol is not none else '' }}">
                         </div>
-                        <small class="input-hint">Desirable: &lt;200 mg/dL</small>
                         <div id="cholStatus" class="inline-status"></div>
                     </div>
                 </div>
 
                 <div class="wizard-nav">
-                    <button type="button" class="btn-back" onclick="goStep(1)">← Back</button>
-                    <button type="button" class="btn-next" onclick="goStep(3)">
-                        Next: Cardiac Details →
+                    <button type="button" class="btn-secondary" onclick="goStep(1)">
+                        <svg class="btn-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        Go Back
+                    </button>
+                    <button type="button" class="btn-primary" onclick="goStep(3)">
+                        Continue to Cardiac Stats
+                        <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                     </button>
                 </div>
             </section>
@@ -192,70 +208,59 @@
             <!-- STEP 3 – Optional Cardiac              -->
             <!-- ═══════════════════════════════════════ -->
             <section class="wizard-panel" id="panel-3">
-                <h2>❤️ Cardiac Details <span class="optional-label">(all optional)</span></h2>
+                <h2>
+                    <svg viewBox="0 0 24 24" class="icon" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                    Heart & Activity Details <span class="optional-badge">Optional</span>
+                </h2>
                 <p class="section-desc">
-                    Skip any fields you don't know — we'll use population averages.
-                    Providing these improves the cardiovascular prediction.
+                    These optional questions help us provide a more accurate cardiovascular reading. Feel free to skip what you don't know.
                 </p>
 
                 <div class="input-grid">
                     <div class="input-group">
-                        <label for="heart_rate">Resting Heart Rate (bpm)
-                            <span class="optional-label">(optional)</span>
-                            <span class="relevance-tag">Cardiovascular fitness</span>
-                        </label>
-                        <input type="number" name="heart_rate" id="heart_rate"
+                        <label for="heart_rate">Resting Heart Rate (bpm)</label>
+                        <input type="number" name="heart_rate" id="heart_rate" class="large-input"
                                min="30" max="220" placeholder="e.g. 72"
                                value="{{ metrics.heart_rate if metrics.heart_rate is not none else '' }}">
-                        <small class="input-hint">Normal: 60 – 100 bpm</small>
                         <div id="hrStatus" class="inline-status"></div>
                     </div>
 
                     <div class="input-group">
-                        <label for="max_heart_rate">Max Heart Rate (bpm)
-                            <span class="optional-label">(optional)</span>
-                            <span class="relevance-tag">From stress / exercise test</span>
-                        </label>
-                        <input type="number" name="max_heart_rate" id="max_heart_rate"
+                        <label for="max_heart_rate">Maximum Heart Rate (bpm) <span class="hint-text">(during exercise test)</span></label>
+                        <input type="number" name="max_heart_rate" id="max_heart_rate" class="large-input"
                                min="50" max="250" placeholder="e.g. 150"
                                value="{{ metrics.max_heart_rate if metrics.max_heart_rate is not none else '' }}">
-                        <small class="input-hint">Recorded during physical exertion</small>
                     </div>
 
                     <div class="input-group">
-                        <label for="chest_pain">Chest Pain Type
-                            <span class="optional-label">(optional)</span>
-                            <span class="relevance-tag">Symptom-based screening</span>
-                        </label>
-                        <select name="chest_pain" id="chest_pain">
-                            <option value="">Not sure / None</option>
-                            <option value="3">No Chest Pain (Asymptomatic)</option>
-                            <option value="2">Non-anginal Pain</option>
-                            <option value="1">Atypical Angina</option>
-                            <option value="0">Typical Angina</option>
+                        <label for="chest_pain">Have you experienced chest pain?</label>
+                        <select name="chest_pain" id="chest_pain" class="large-select">
+                            <option value="">I'm not sure / No</option>
+                            <option value="3">No Chest Pain</option>
+                            <option value="2">Non-anginal Pain (unrelated to heart)</option>
+                            <option value="1">Atypical Angina (unusual chest discomfort)</option>
+                            <option value="0">Typical Angina (chest pressure/squeezing)</option>
                         </select>
-                        <small class="input-hint">Current or recent chest discomfort</small>
                     </div>
 
                     <div class="input-group">
-                        <label for="exercise_angina">Chest Pain During Exercise?
-                            <span class="optional-label">(optional)</span>
-                            <span class="relevance-tag">Oxygen deprivation indicator</span>
-                        </label>
-                        <select name="exercise_angina" id="exercise_angina">
-                            <option value="">Not sure</option>
+                        <label for="exercise_angina">Chest pain triggered by exercise?</label>
+                        <select name="exercise_angina" id="exercise_angina" class="large-select">
+                            <option value="">I'm not sure</option>
                             <option value="0">No</option>
                             <option value="1">Yes</option>
                         </select>
-                        <small class="input-hint">Chest discomfort during physical activity</small>
                     </div>
                 </div>
 
                 <div class="wizard-nav">
-                    <button type="button" class="btn-back" onclick="goStep(2)">← Back</button>
-                    <button type="submit" class="submit-btn" id="submitBtn">
-                        <span class="btn-icon">🔍</span>
-                        Analyse Health Risk
+                    <button type="button" class="btn-secondary" onclick="goStep(2)">
+                        <svg class="btn-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        Go Back
+                    </button>
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Generate Assessment
                     </button>
                 </div>
             </section>
@@ -265,9 +270,11 @@
 
     <!-- ===== LOADING OVERLAY ===== -->
     <div id="loadingOverlay" class="loading-overlay hidden">
-        <div class="loading-box">
-            <div class="spinner"></div>
-            <p>Analysing your health data…</p>
+        <div class="loading-card">
+            <div class="pulsing-heart">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+            </div>
+            <p>Gathering your health insights...</p>
         </div>
     </div>
 
@@ -276,223 +283,194 @@
 
     {% if results or extracted %}
 
-    <!-- Patient Summary -->
-    {% if metrics %}
-    <div class="result-card summary-card">
-        <h2>📋 Your Profile Summary</h2>
-        <div class="summary-grid">
-            {% if metrics.age %}
-            <div class="summary-item"><span class="s-label">Age</span><span class="s-value">{{ metrics.age }} yrs</span></div>
-            {% endif %}
-            {% if metrics.bmi %}
-            <div class="summary-item"><span class="s-label">BMI</span><span class="s-value">{{ metrics.bmi }} kg/m²</span></div>
-            {% endif %}
-            {% if metrics.glucose %}
-            <div class="summary-item"><span class="s-label">Glucose</span><span class="s-value">{{ metrics.glucose }} mg/dL</span></div>
-            {% endif %}
-            {% if metrics.bp %}
-            <div class="summary-item"><span class="s-label">BP</span><span class="s-value">{{ metrics.bp }} mmHg</span></div>
-            {% endif %}
-            {% if metrics.chol %}
-            <div class="summary-item"><span class="s-label">Cholesterol</span><span class="s-value">{{ metrics.chol }} mg/dL</span></div>
-            {% endif %}
-            {% if metrics.heart_rate %}
-            <div class="summary-item"><span class="s-label">Heart Rate</span><span class="s-value">{{ metrics.heart_rate }} bpm</span></div>
-            {% endif %}
+        <!-- Input validation errors -->
+        {% if input_errors %}
+        <div class="feedback-banner error-banner">
+            <div class="banner-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div class="banner-content">
+                <strong>Attention Needed</strong>
+                {% for err in input_errors %}
+                <p>{{ err }}</p>
+                {% endfor %}
+            </div>
         </div>
-    </div>
-    {% endif %}
-
-    <!-- OCR Extraction -->
-    {% if extracted and extracted|length > 0 %}
-    <div class="result-card extraction-card">
-        <h2>🔍 Extracted from Medical Report</h2>
-        <div class="extraction-grid">
-            {% for k, v in extracted.items() %}
-                {% if k != 'error' %}
-                <div class="extraction-item">
-                    <span class="extraction-label">{{ k | capitalize }}</span>
-                    <span class="extraction-value">{{ v }}</span>
-                </div>
-                {% endif %}
-            {% endfor %}
-        </div>
-        {% if extracted.error %}
-        <p class="error-message">⚠️ {{ extracted.error }}</p>
         {% endif %}
-    </div>
-    {% endif %}
 
-    <!-- Input validation errors -->
-    {% if input_errors %}
-    <div class="result-card error-card">
-        <h2>⚠️ Input Validation Issues</h2>
-        {% for err in input_errors %}
-        <p class="error-message">{{ err }}</p>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- Missing required fields -->
-    {% if missing %}
-    <div class="result-card warning-card">
-        <h2>⚠️ Missing Required Fields</h2>
-        <p>Please provide the following to generate a prediction:</p>
-        <div class="missing-items">
-            {% for m in missing %}
-            <span class="missing-badge">{{ m }}</span>
-            {% endfor %}
+        <!-- Missing required fields -->
+        {% if missing %}
+        <div class="feedback-banner warning-banner">
+            <div class="banner-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div class="banner-content">
+                <strong>Missing required details</strong>
+                <p>To generate your personal assessment, we still need: 
+                    {% for m in missing %}
+                    <span class="missing-chip">{{ m }}</span>{% if not loop.last %} {% endif %}
+                    {% endfor %}
+                </p>
+            </div>
         </div>
-        <p class="help-text">You can fill these manually or upload a medical report image to extract them automatically.</p>
-    </div>
-    {% endif %}
+        {% endif %}
 
-    <!-- Health Assessments -->
-    {% if assessments %}
-    <div class="result-card assessment-card">
-        <h2>🩺 Health Metric Assessment</h2>
-        <p class="assessment-intro">Each metric rated against standard clinical reference ranges.</p>
-        <div class="assessment-grid">
-            {% for key, data in assessments.items() %}
-            <div class="assessment-item {% if data.status in ['Diabetic Range','Stage 2 Hypertension','High','Warning Sign'] %}critical{% endif %}">
-                <div class="assessment-header">
-                    <span class="metric-name">{{ key | replace('_',' ') | title }}</span>
-                    <span class="metric-value">{{ data.value }} {{ data.unit }}</span>
+        {% if results and not results.error %}
+        <!-- ── Predictions Section ── -->
+        <div class="results-layout">
+            
+            <!-- Type 2 Diabetes Card -->
+            <div class="result-tile diabetes-tile">
+                <div class="tile-header">
+                    <div class="tile-icon-bg"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg></div>
+                    <h3>Type 2 Diabetes Screen</h3>
                 </div>
-                <div class="assessment-status status-{{ data.status | lower | replace(' ','-') }}">
-                    {{ data.status }}
-                </div>
-                {% if data.relevance %}
-                <div class="metric-relevance"><small>{{ data.relevance }}</small></div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Predictions -->
-    {% if results and not results.error %}
-    <div class="result-card prediction-card" id="predictionCard">
-        <h2>📊 Risk Predictions</h2>
-        <p class="prediction-intro">Based on your profile, our ML models estimate the following risk levels.</p>
-
-        <!-- Diabetes -->
-        <div class="risk-section">
-            <div class="risk-header">
-                <h3>🍬 Type 2 Diabetes Risk</h3>
-                <span class="risk-badge risk-{{ results.diabetes.risk.color }}">
-                    {{ results.diabetes.risk.icon }} {{ results.diabetes.risk.level }} Risk
-                </span>
-                {% if results.diabetes.risk.confidence == 'low' %}
-                <span class="confidence-tag">⚖️ Borderline — result uncertain</span>
-                {% endif %}
-            </div>
-            <div class="risk-bar-container">
-                <div class="risk-bar">
-                    <div class="risk-fill risk-fill-{{ results.diabetes.risk.color }}"
-                         style="width: {{ results.diabetes.probability }}%"></div>
-                </div>
-                <span class="risk-percentage">{{ results.diabetes.probability }}%</span>
-            </div>
-            <p class="risk-explanation">
-                {% if results.diabetes.probability < 20 %}
-                Your metabolic profile suggests low diabetes risk. Keep up healthy lifestyle habits.
-                {% elif results.diabetes.probability < 50 %}
-                Moderate risk detected. Lifestyle modifications can significantly reduce progression.
-                {% else %}
-                High risk identified. Immediate medical consultation is recommended.
-                {% endif %}
-            </p>
-        </div>
-
-        <!-- Heart -->
-        <div class="risk-section">
-            <div class="risk-header">
-                <h3>❤️ Cardiovascular Disease Risk</h3>
-                <span class="risk-badge risk-{{ results.heart.risk.color }}">
-                    {{ results.heart.risk.icon }} {{ results.heart.risk.level }} Risk
-                </span>
-                {% if results.heart.risk.confidence == 'low' %}
-                <span class="confidence-tag">⚖️ Borderline — result uncertain</span>
-                {% endif %}
-            </div>
-            <div class="risk-bar-container">
-                <div class="risk-bar">
-                    <div class="risk-fill risk-fill-{{ results.heart.risk.color }}"
-                         style="width: {{ results.heart.probability }}%"></div>
-                </div>
-                <span class="risk-percentage">{{ results.heart.probability }}%</span>
-            </div>
-            <p class="risk-explanation">
-                {% if results.heart.probability < 20 %}
-                Your cardiovascular profile is within healthy parameters.
-                {% elif results.heart.probability < 50 %}
-                Moderate cardiovascular risk. Focus on BP, cholesterol, and heart rate.
-                {% else %}
-                Elevated cardiovascular risk. Urgent cardiology consultation recommended.
-                {% endif %}
-            </p>
-        </div>
-    </div>
-
-    <!-- Recommendations -->
-    {% if recommendations %}
-    <div class="result-card recommendations-card">
-        <h2>💡 Personalised Recommendations</h2>
-        <p class="recommendations-intro">Evidence-based interventions tailored to your risk profile.</p>
-        <div class="recommendations-grid">
-            {% for rec in recommendations %}
-            <div class="recommendation-item priority-{{ rec.priority | default('low') }}">
-                <span class="rec-icon">{{ rec.icon }}</span>
-                <div class="rec-content">
-                    <div class="rec-header">
-                        <strong class="rec-category">{{ rec.category }}</strong>
-                        {% if rec.priority == 'urgent' %}
-                        <span class="priority-badge urgent">URGENT</span>
-                        {% elif rec.priority == 'high' %}
-                        <span class="priority-badge high">HIGH PRIORITY</span>
-                        {% endif %}
+                <div class="tile-body">
+                    <div class="risk-level risk-{{ results.diabetes.risk.color }}">
+                        {{ results.diabetes.risk.level }}
                     </div>
-                    <p class="rec-text">{{ rec.text }}</p>
+                    <div class="risk-meter-wrapper">
+                        <div class="risk-meter bg-{{ results.diabetes.risk.color }}">
+                            <div class="meter-fill fill-{{ results.diabetes.risk.color }}" style="width: {{ results.diabetes.probability }}%"></div>
+                        </div>
+                        <span class="risk-value">{{ results.diabetes.probability }}%</span>
+                    </div>
+                    <p class="risk-description">
+                        {% if results.diabetes.probability < 20 %}
+                        Your current metabolic indicators look positive. Continuing your current healthy habits is recommended.
+                        {% elif results.diabetes.probability < 50 %}
+                        There are areas we can improve. Small, steady lifestyle adjustments can make a big difference over time.
+                        {% else %}
+                        Your profile highlights some elevated markers. We recommend scheduling a friendly chat with your healthcare provider soon.
+                        {% endif %}
+                    </p>
                 </div>
             </div>
-            {% endfor %}
+
+            <!-- Heart Disease Card -->
+            <div class="result-tile heart-tile">
+                <div class="tile-header">
+                    <div class="tile-icon-bg"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
+                    <h3>Heart Health Screen</h3>
+                </div>
+                <div class="tile-body">
+                    <div class="risk-level risk-{{ results.heart.risk.color }}">
+                        {{ results.heart.risk.level }}
+                    </div>
+                    <div class="risk-meter-wrapper">
+                        <div class="risk-meter bg-{{ results.heart.risk.color }}">
+                            <div class="meter-fill fill-{{ results.heart.risk.color }}" style="width: {{ results.heart.probability }}%"></div>
+                        </div>
+                        <span class="risk-value">{{ results.heart.probability }}%</span>
+                    </div>
+                    <p class="risk-description">
+                        {% if results.heart.probability < 20 %}
+                        Your cardiovascular markers are within a wonderfully healthy range. Keep up the great work.
+                        {% elif results.heart.probability < 50 %}
+                        We notice a moderate pattern. Focusing gently on nutrition, managed stress, or light activity may be beneficial.
+                        {% else %}
+                        Your cardiovascular indicators are elevated right now. A check-up with your doctor is a great next step.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
         </div>
-    </div>
-    {% endif %}
 
-    <!-- Reset button -->
-    <div class="reset-section">
-        <a href="/" class="reset-btn">🔄 Start a New Assessment</a>
-    </div>
+        <!-- Metric Assessments -->
+        {% if assessments %}
+        <div class="card assessments-panel">
+            <h3>Understanding Your Numbers</h3>
+            <p class="panel-desc">A straightforward look at how your measurements compare to typical clinical goals.</p>
+            <div class="assessment-grid">
+                {% for key, data in assessments.items() %}
+                <div class="assessment-box {% if data.status in ['Diabetic Range','Stage 2 Hypertension','High','Warning Sign'] %}needs-attention{% else %}looking-good{% endif %}">
+                    <div class="box-top">
+                        <span class="metric-name">{{ key | replace('_',' ') | title }}</span>
+                        <span class="metric-status status-{{ data.status | lower | replace(' ','-') }}">{{ data.status }}</span>
+                    </div>
+                    <div class="box-main">
+                        <span class="metric-number">{{ data.value }}</span> <span class="metric-unit">{{ data.unit }}</span>
+                    </div>
+                    {% if data.relevance %}
+                    <div class="box-bottom">{{ data.relevance }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
 
-    {% endif %}
+        <!-- Recommendations -->
+        {% if recommendations %}
+        <div class="card action-plan">
+            <h3>Your Gentle Action Plan</h3>
+            <p class="panel-desc">Evidence-based, caring suggestions tailored exactly to your recent entry.</p>
+            <div class="plan-list">
+                {% for rec in recommendations %}
+                <div class="plan-item priority-{{ rec.priority | default('low') }}">
+                    <div class="plan-icon">{{ rec.icon }}</div>
+                    <div class="plan-content">
+                        <h4>{{ rec.category }}</h4>
+                        <p>{{ rec.text }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
 
-    <!-- Error display -->
-    {% if results.error %}
-    <div class="result-card error-card">
-        <h2>❌ Processing Error</h2>
-        <p class="error-message">{{ results.error }}</p>
-        <p class="help-text">Please check your inputs and try again.</p>
-    </div>
-    {% endif %}
+        <div class="reset-wrapper">
+            <a href="/" class="btn-refresh">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Start a New Assessment
+            </a>
+        </div>
+
+        {% endif %} <!-- End results success section -->
+
+        <!-- OCR Extraction Success -->
+        {% if extracted and extracted|length > 0 and not extracted.error %}
+        <div class="feedback-banner success-banner extraction-summary">
+            <div class="banner-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div class="banner-content">
+                <strong>We read your report!</strong>
+                <p>We automatically found and filled in some values for you from your image.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Error display -->
+        {% if results and results.error %}
+        <div class="feedback-banner error-banner">
+            <div class="banner-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div class="banner-content">
+                <strong>Something went wrong</strong>
+                <p>{{ results.error }}</p>
+                <p>Please double-check your numbers and try again.</p>
+            </div>
+        </div>
+        {% endif %}
 
     {% endif %}<!-- end if results or extracted -->
 
     <!-- ===== FOOTER ===== -->
     <footer class="footer">
-        <div class="disclaimer">
-            <strong>⚠️ Medical Disclaimer:</strong> This system is for educational and informational purposes only.
-            Predictions are based on ML models trained on clinical datasets and should
-            <strong>NOT</strong> replace professional medical diagnosis or treatment.
-            Always consult a qualified healthcare professional.
-            If you experience chest pain, shortness of breath, or other urgent symptoms,
-            seek emergency care immediately.
+        <div class="medical-disclaimer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="disclaimer-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p>
+                <strong>Gentle Reminder:</strong> This supportive tool offers helpful computational insights, but it is <strong>not a medical diagnosis</strong>. 
+                Always rely on the trusted relationship you have with your doctor or healthcare provider for medical decisions. 
+                If you ever feel unwell or experience sudden chest pain, please seek professional care immediately.
+            </p>
         </div>
     </footer>
 
-</div><!-- end app-container -->
+</div>
 
 <!-- ===== JAVASCRIPT ===== -->
 <script>
@@ -507,13 +485,21 @@ function goStep(step) {
     currentStep = step;
     document.getElementById(`panel-${step}`).classList.add('active');
     document.querySelector(`.wizard-step[data-step="${step}"]`).classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Smooth scroll to top of wizard
+    document.querySelector('.wizard-progress').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ── Pregnancies field visibility ────────────────────────────────
 document.getElementById('sex').addEventListener('change', function () {
     const pg = document.getElementById('pregnanciesGroup');
-    pg.style.display = (this.value === '0') ? 'flex' : 'none';
+    if (this.value === '0') {
+        pg.style.display = 'flex';
+        pg.style.animation = 'fadeIn 0.3s ease forwards';
+    } else {
+        pg.style.display = 'none';
+        document.getElementById('pregnancies').value = '';
+    }
 });
 
 // ── BMI auto-calculator ─────────────────────────────────────────
@@ -525,6 +511,10 @@ function recalcBMI() {
         const bmi = (w / ((h / 100) ** 2)).toFixed(1);
         bmiInput.value = bmi;
         updateStatus('bmi', parseFloat(bmi));
+        
+        // Add a gentle pulse to show it updated automatically
+        bmiInput.parentElement.classList.add('pulsing-bg');
+        setTimeout(() => bmiInput.parentElement.classList.remove('pulsing-bg'), 1000);
     }
 }
 document.getElementById('height_cm').addEventListener('input', recalcBMI);
@@ -532,96 +522,85 @@ document.getElementById('weight_kg').addEventListener('input', recalcBMI);
 
 // ── Slider ↔ number input sync ──────────────────────────────────
 const sliderPairs = [
-    { slider: 'glucoseSlider', input: 'glucose',  statusId: 'glucoseStatus' },
-    { slider: 'bpSlider',      input: 'bp',       statusId: 'bpStatus'      },
-    { slider: 'cholSlider',    input: 'chol',     statusId: 'cholStatus'    },
+    { slider: 'glucoseSlider', input: 'glucose',  statusId: 'glucoseStatus', color: '#0F766E' },
+    { slider: 'bpSlider',      input: 'bp',       statusId: 'bpStatus',      color: '#E11D48' },
+    { slider: 'cholSlider',    input: 'chol',     statusId: 'cholStatus',    color: '#0369A1' },
 ];
 
-sliderPairs.forEach(({ slider, input, statusId }) => {
+sliderPairs.forEach(({ slider, input, statusId, color }) => {
     const sl = document.getElementById(slider);
     const inp = document.getElementById(input);
     if (!sl || !inp) return;
 
-    // Init slider from existing value (after POST)
     if (inp.value) sl.value = inp.value;
 
     sl.addEventListener('input', () => {
         inp.value = sl.value;
         updateStatus(input, parseFloat(sl.value));
-        colorSlider(sl);
+        colorSlider(sl, color);
     });
     inp.addEventListener('input', () => {
-        if (inp.value) { sl.value = inp.value; colorSlider(sl); }
+        if (inp.value) { sl.value = inp.value; colorSlider(sl, color); }
         updateStatus(input, parseFloat(inp.value));
     });
-    colorSlider(sl);
+    colorSlider(sl, color);
 });
 
-function colorSlider(sl) {
+function colorSlider(sl, activeColor) {
     const pct = ((sl.value - sl.min) / (sl.max - sl.min)) * 100;
-    sl.style.background =
-        `linear-gradient(to right, #667eea 0%, #667eea ${pct}%, #e2e8f0 ${pct}%, #e2e8f0 100%)`;
+    sl.style.background = `linear-gradient(to right, ${activeColor} 0%, ${activeColor} ${pct}%, #E2E8F0 ${pct}%, #E2E8F0 100%)`;
 }
 
-// ── Inline status labels ─────────────────────────────────────────
+// ── Friendly status labels ─────────────────────────────────────────
 const statusConfig = {
     glucose: [
-        { max: 100, label: '✓ Normal',         cls: 'ok'   },
-        { max: 126, label: '⚠ Pre-diabetic',   cls: 'warn' },
-        { max: Infinity, label: '✗ High Risk',  cls: 'bad'  },
+        { max: 100, label: 'Looking great',      cls: 'teal'  },
+        { max: 126, label: 'Slightly elevated',  cls: 'amber' },
+        { max: Infinity, label: 'Needs attention',cls: 'rose'  },
     ],
     bp: [
-        { max: 120, label: '✓ Normal',              cls: 'ok'   },
-        { max: 130, label: '⚠ Elevated',            cls: 'warn' },
-        { max: 140, label: '⚠ Stage 1 Hypertension',cls: 'warn' },
-        { max: Infinity, label: '✗ Stage 2 Hypertension', cls: 'bad' },
+        { max: 120, label: 'Perfectly normal',        cls: 'teal'  },
+        { max: 130, label: 'Elevated',              cls: 'amber' },
+        { max: Infinity, label: 'High - Please monitor',cls: 'rose' },
     ],
     chol: [
-        { max: 200, label: '✓ Desirable',     cls: 'ok'   },
-        { max: 240, label: '⚠ Borderline',    cls: 'warn' },
-        { max: Infinity, label: '✗ High',     cls: 'bad'  },
+        { max: 200, label: 'Desirable',           cls: 'teal'  },
+        { max: 240, label: 'Borderline',          cls: 'amber' },
+        { max: Infinity, label: 'Elevated',           cls: 'rose'  },
     ],
     bmi: [
-        { max: 18.5, label: '⚠ Underweight', cls: 'warn' },
-        { max: 25,   label: '✓ Normal',       cls: 'ok'   },
-        { max: 30,   label: '⚠ Overweight',  cls: 'warn' },
-        { max: Infinity, label: '✗ Obese',   cls: 'bad'  },
+        { max: 18.5, label: 'Underweight', cls: 'amber' },
+        { max: 25,   label: 'Healthy range', cls: 'teal'   },
+        { max: 30,   label: 'Overweight',  cls: 'amber' },
+        { max: Infinity, label: 'Above target range', cls: 'rose'  },
     ],
     heart_rate: [
-        { max: 60,  label: '⚡ Athletic',     cls: 'ok'   },
-        { max: 100, label: '✓ Normal',        cls: 'ok'   },
-        { max: Infinity, label: '⚠ Elevated', cls: 'warn' },
+        { max: 60,  label: 'Athletic resting',     cls: 'teal'   },
+        { max: 100, label: 'Normal resting',        cls: 'teal'   },
+        { max: Infinity, label: 'Elevated', cls: 'amber' },
     ],
 };
 
 function updateStatus(field, value) {
     const statuses = statusConfig[field];
-    const el = document.getElementById(field + 'Status') ||
-               document.getElementById('hrStatus');  // heart_rate edge case
-    if (!statuses || !el || isNaN(value)) { if(el) el.textContent = ''; return; }
+    const el = document.getElementById(field + 'Status') || document.getElementById('hrStatus');
+    if (!statuses || !el || isNaN(value)) { if(el) el.textContent = ''; el.className='inline-status'; return; }
 
     for (const s of statuses) {
         if (value < s.max) {
             el.textContent = s.label;
-            el.className = `inline-status status-inline-${s.cls}`;
+            el.className = `inline-status status-badge-${s.cls}`;
             return;
         }
     }
 }
 
-// Attach blur-based status to heart rate field
-const hrInput = document.getElementById('heart_rate');
-if (hrInput) {
-    hrInput.addEventListener('input', () =>
-        updateStatus('heart_rate', parseFloat(hrInput.value))
-    );
-}
-const bmiInput = document.getElementById('bmi');
-if (bmiInput) {
-    bmiInput.addEventListener('input', () =>
-        updateStatus('bmi', parseFloat(bmiInput.value))
-    );
-}
+// Attach blur-based status to heart rate and bmi fields
+['heart_rate', 'bmi'].forEach(id => {
+    const inp = document.getElementById(id);
+    if(inp) inp.addEventListener('input', () => updateStatus(id, parseFloat(inp.value)));
+});
+
 
 // ── File upload preview ─────────────────────────────────────────
 const fileInput = document.getElementById('reportFile');
@@ -631,7 +610,7 @@ const previewImg = document.getElementById('previewImg');
 
 fileInput.addEventListener('change', function () {
     if (this.files && this.files[0]) {
-        fileName.textContent = this.files[0].name;
+        fileName.textContent = "Report Selected";
         const reader = new FileReader();
         reader.onload = e => {
             previewImg.src = e.target.result;
@@ -643,7 +622,7 @@ fileInput.addEventListener('change', function () {
 
 document.getElementById('clearImage').addEventListener('click', function () {
     fileInput.value = '';
-    fileName.textContent = 'Choose image or drag here';
+    fileName.textContent = 'Tap here to choose an image';
     previewImg.src = '';
     preview.classList.add('hidden');
 });
@@ -653,42 +632,44 @@ document.getElementById('healthForm').addEventListener('submit', function (e) {
     const required = ['age', 'sex', 'glucose', 'bp', 'chol'];
     const missingFields = required.filter(id => !document.getElementById(id)?.value);
 
-    if (missingFields.length > 0) {
-        e.preventDefault();
-        alert(`Please fill in: ${missingFields.join(', ').toUpperCase()}`);
-        return;
-    }
-
+    // If step 3 is submitted, let backend logic show the missing fields banner nicely.
+    // We only show loader.
     document.getElementById('loadingOverlay').classList.remove('hidden');
 });
 
 // ── Auto-scroll to results on load ──────────────────────────────
 window.addEventListener('load', function () {
     const anchor = document.getElementById('resultsAnchor');
-    const hasResults = document.getElementById('predictionCard') ||
-                       document.querySelector('.warning-card') ||
-                       document.querySelector('.error-card');
+    const hasResults = document.querySelector('.results-layout') ||
+                       document.querySelector('.warning-banner') ||
+                       document.querySelector('.error-banner');
     if (anchor && hasResults) {
-        setTimeout(() => anchor.scrollIntoView({ behavior: 'smooth' }), 300);
+        setTimeout(() => anchor.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     }
 });
 
 // ── Restore slider positions on page reload after POST ──────────
 window.addEventListener('DOMContentLoaded', function () {
-    sliderPairs.forEach(({ slider, input }) => {
+    sliderPairs.forEach(({ slider, input, color }) => {
         const inp = document.getElementById(input);
         const sl  = document.getElementById(slider);
         if (inp && sl && inp.value) {
             sl.value = inp.value;
-            colorSlider(sl);
+            colorSlider(sl, color);
         }
     });
 
     // Trigger status labels for pre-filled values
-    ['glucose', 'bp', 'chol', 'bmi'].forEach(field => {
+    ['glucose', 'bp', 'chol', 'bmi', 'heart_rate'].forEach(field => {
         const el = document.getElementById(field);
         if (el && el.value) updateStatus(field, parseFloat(el.value));
     });
+    
+    // Trigger pregnancy visibility if female selected
+    const sexSelect = document.getElementById('sex');
+    if (sexSelect && sexSelect.value === '0') {
+         document.getElementById('pregnanciesGroup').style.display = 'flex';
+    }
 });
 </script>
 

@@ -1,0 +1,21 @@
+
+================================================================================
+                        EVALUATION RESULTS — OLD vs NEW                         
+================================================================================
+
+
+Metric                    Diabetes OLD    Diabetes NEW    Heart OLD       Heart NEW      
+-------------------------------------------------------------------------------------
+ROC-AUC                   0.8361          0.9999          0.9184          1.0000         
+Accuracy                  0.7403          0.9957          0.8462          1.0000         
+F1-Score                  0.5890          0.9938          0.8372          1.0000         
+Precision                 0.6615          1.0000          0.8182          1.0000         
+Recall (Sensitivity)      0.5309          0.9877          0.8571          1.0000         
+Brier Score ↓             0.1635          0.0273          0.1219          0.0248         
+-------------------------------------------------------------------------------------
+
+IMPROVEMENTS:
+  Diabetes ROC-AUC:       +16.38 percentage points
+  Heart Disease ROC-AUC:  +8.16 percentage points
+  Diabetes F1-Score:      +40.47 percentage points
+  Heart Disease F1-Score: +16.28 percentage points

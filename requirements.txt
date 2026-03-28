@@ -4,4 +4,5 @@ scikit-learn
 joblib
 pillow
 pytesseract
-xgboost
+xgboost
+gunicorn
